@@ -17,8 +17,10 @@ A **CLI-first** application for converting image sequences to video using FFmpeg
 
 ## Quick Start
 
+> **Prerequisites:** Python 3.10+ and FFmpeg must be installed first. See [Installation](#installation) below.
+
 ```bash
-# Basic usage
+# Basic usage (after installing with pip install -e .)
 img2vid ./renders/sequence_001 -o output.mp4
 
 # With custom settings
@@ -28,7 +30,11 @@ img2vid ./renders/sequence_001 -o output.mp4 -r 1920x1080 -f 30 -c h264 --crf 18
 img2vid ./renders/sequence_001 -o output.mp4 --frame-start 100 --frame-end 200
 
 # Launch TUI mode
-img2vid --tui
+img2vid-tui
+
+# Or run directly without installing
+python -m src.main ./renders/sequence_001 -o output.mp4
+python -m src.main_tui
 ```
 
 ## Installation
@@ -38,7 +44,7 @@ img2vid --tui
 - **Python 3.10+**
 - **FFmpeg** installed and available in your PATH
 
-### Install FFmpeg
+### 1. Install FFmpeg
 
 **Windows:**
 ```powershell
@@ -59,17 +65,50 @@ sudo pacman -S ffmpeg    # Arch
 sudo dnf install ffmpeg  # Fedora
 ```
 
-### Install img2vid
+Verify FFmpeg is working:
+```bash
+ffmpeg -version
+```
+
+### 2. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/img2vid.git
-cd img2vid
+git clone https://github.com/BenjaminTia/Image-Sequence-to-Video-CLI.git
+cd Image-Sequence-to-Video-CLI
+```
 
+### 3. Set Up a Virtual Environment
+
+```bash
 python -m venv venv
-venv\Scripts\activate  # Windows
-source venv/bin/activate  # macOS/Linux
 
+# Activate it:
+venv\Scripts\activate      # Windows (CMD/PowerShell)
+source venv/bin/activate   # macOS/Linux
+```
+
+### 4. Install Dependencies
+
+```bash
+# Install the package in editable mode (registers img2vid and img2vid-tui commands)
+pip install -e .
+
+# Or install only the Python dependencies (run via python -m src.main instead)
 pip install -r requirements.txt
+```
+
+> **Note:** `pip install -e .` is recommended. It reads `pyproject.toml` and registers the `img2vid` and `img2vid-tui` shell commands so you can run them directly. If you only use `pip install -r requirements.txt`, use `python -m src.main` and `python -m src.main_tui` to run instead.
+
+### Running Without Installing (Development Mode)
+
+If you prefer not to install the package, run the scripts directly from the project root:
+
+```bash
+# CLI mode
+python -m src.main ./renders/sequence_001 -o output.mp4
+
+# TUI mode
+python -m src.main_tui
 ```
 
 ## CLI Usage
@@ -77,7 +116,11 @@ pip install -r requirements.txt
 ### Basic Command
 
 ```bash
+# If installed with pip install -e .
 img2vid <input_directory> [options]
+
+# If using pip install -r requirements.txt only
+python -m src.main <input_directory> [options]
 ```
 
 ### Options
@@ -93,7 +136,6 @@ img2vid <input_directory> [options]
 | `--format` | | Container format | `mp4` |
 | `--crf` | | Quality (0-51) | `23` |
 | `--preset` | | Encoding preset | `medium` |
-| `--tui` | | Launch TUI mode | |
 | `--verbose` | `-v` | Verbose output | |
 | `--version` | | Show version | |
 
@@ -139,7 +181,11 @@ done
 Launch the interactive terminal UI:
 
 ```bash
-img2vid --tui
+# If installed with pip install -e .
+img2vid-tui
+
+# If using pip install -r requirements.txt only
+python -m src.main_tui
 ```
 
 ### TUI Keyboard Shortcuts
@@ -195,7 +241,7 @@ asyncio.run(convert())
 ## Project Structure
 
 ```
-img2vid/
+Image-Sequence-to-Video-CLI/
 ├── src/
 │   ├── __init__.py       # Package
 │   ├── main.py           # CLI entry point
@@ -212,10 +258,19 @@ img2vid/
 └── README.md
 ```
 
+## Technical Highlights
+
+- **Async architecture** - FFmpeg subprocess wrapped in `asyncio` for non-blocking encoding with real-time stdout parsing
+- **Textual TUI framework** - Reactive widgets, keyboard bindings, and theming via the [Textual](https://github.com/Textualize/textual) library
+- **Typed data models** - Dataclasses and enums (`VideoCodec`, `Resolution`, `FrameRange`) for safe config passing
+- **Regex-based sequence detection** - Automatically identifies frame padding and numbering patterns (e.g., `frame_0001.png`, `img.0042.exr`)
+- **Process management** - Proper FFmpeg subprocess lifecycle with stderr capture and exit code handling
+- **Packagable** - PyInstaller-compatible for single-file distribution
+
 ## Development
 
 ```bash
-# Install dev dependencies
+# Install with dev dependencies
 pip install -e ".[dev]"
 
 # Run tests
@@ -234,10 +289,10 @@ mypy src/
 ## Build Executable
 
 ```bash
-# Windows
+# Windows (runs build.bat which handles venv + PyInstaller automatically)
 build.bat
 
-# Manual
+# Manual (from project root, with venv active)
 pyinstaller --name img2vid --onefile src/main.py
 ```
 
@@ -267,8 +322,16 @@ pyinstaller --name img2vid --onefile src/main.py
 ffmpeg -version  # Verify installation
 ```
 
+**`img2vid` command not found after install:**
+```bash
+# Make sure you used pip install -e . (not just pip install -r requirements.txt)
+pip install -e .
+# If using requirements.txt only, run via:
+python -m src.main
+```
+
 **No sequence detected:**
-Ensure images follow pattern: `frame_0001.png`, `img_001.exr`, etc.
+Ensure images follow a numbered pattern: `frame_0001.png`, `img_001.exr`, etc.
 
 **Encoding slow:**
 - Use faster preset: `--preset fast` or `--preset ultrafast`
@@ -281,8 +344,10 @@ MIT License
 
 ## Author
 
+**Benjamin Tia**
+
 - GitHub: [@BenjaminTia](https://github.com/BenjaminTia)
 
 ---
 
-*Built with Python and Textual*
+*Built with Python, Textual, and FFmpeg*
