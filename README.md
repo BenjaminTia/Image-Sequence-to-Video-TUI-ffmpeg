@@ -9,7 +9,7 @@ A **CLI-first** application for converting image sequences to video using FFmpeg
 
 - 🖼️ **Automatic Sequence Detection** - Detects image sequences with numbered frames
 - ⚙️ **Configurable Output** - Resolution, FPS, codec, format, and quality settings
-- ✂️ **Trim Support** - Specify frame ranges to encode only portions
+- ✂️ **Trim Support** - Specify frame ranges or time ranges to encode only portions
 - 📊 **Real-time Progress** - Terminal progress bar with encoding speed and ETA
 - 🔧 **CLI-First Design** - Easy integration into scripts, pipelines, and other programs
 - 🎨 **Optional TUI** - Interactive terminal UI when needed
@@ -20,7 +20,7 @@ A **CLI-first** application for converting image sequences to video using FFmpeg
 > **Prerequisites:** Python 3.10+ and FFmpeg must be installed first. See [Installation](#installation) below.
 
 ```bash
-# Basic usage (after installing with pip install -e .)
+# Basic usage (after pip install -e .)
 img2vid ./renders/sequence_001 -o output.mp4
 
 # With custom settings
@@ -30,11 +30,11 @@ img2vid ./renders/sequence_001 -o output.mp4 -r 1920x1080 -f 30 -c h264 --crf 18
 img2vid ./renders/sequence_001 -o output.mp4 --frame-start 100 --frame-end 200
 
 # Launch TUI mode
-img2vid-tui
+img2vid --tui
 
-# Or run directly without installing
+# Or run directly without installing (from project root)
 python -m src.main ./renders/sequence_001 -o output.mp4
-python -m src.main_tui
+python -m src.main --tui
 ```
 
 ## Installation
@@ -90,25 +90,28 @@ source venv/bin/activate   # macOS/Linux
 ### 4. Install Dependencies
 
 ```bash
-# Install the package in editable mode (registers img2vid and img2vid-tui commands)
+# Recommended: installs the package and registers the img2vid command
 pip install -e .
 
-# Or install only the Python dependencies (run via python -m src.main instead)
+# Alternative: installs only Python dependencies (no img2vid command registered)
 pip install -r requirements.txt
 ```
 
-> **Note:** `pip install -e .` is recommended. It reads `pyproject.toml` and registers the `img2vid` and `img2vid-tui` shell commands so you can run them directly. If you only use `pip install -r requirements.txt`, use `python -m src.main` and `python -m src.main_tui` to run instead.
+> **Note:** `pip install -e .` registers the `img2vid` shell command so you can call it from anywhere in your terminal. If you use `pip install -r requirements.txt` instead, run the tool via `python -m src.main` from the project root.
 
-### Running Without Installing (Development Mode)
+### Running Without Installing
 
-If you prefer not to install the package, run the scripts directly from the project root:
+If you skip `pip install -e .`, run directly from the project root:
 
 ```bash
 # CLI mode
 python -m src.main ./renders/sequence_001 -o output.mp4
 
 # TUI mode
-python -m src.main_tui
+python -m src.main --tui
+
+# No arguments = TUI mode launches automatically
+python -m src.main
 ```
 
 ## CLI Usage
@@ -119,9 +122,11 @@ python -m src.main_tui
 # If installed with pip install -e .
 img2vid <input_directory> [options]
 
-# If using pip install -r requirements.txt only
+# If not installed (run from project root)
 python -m src.main <input_directory> [options]
 ```
+
+> **Tip:** Running `img2vid` or `python -m src.main` with no arguments automatically launches TUI mode.
 
 ### Options
 
@@ -130,12 +135,13 @@ python -m src.main <input_directory> [options]
 | `--output` | `-o` | Output video file path | `output.mp4` |
 | `--resolution` | `-r` | Output resolution (WxH) | `1920x1080` |
 | `--fps` | `-f` | Frames per second | `24` |
-| `--frame-start` | | Start frame (auto if omitted) | Full sequence |
-| `--frame-end` | | End frame (auto if omitted) | Full sequence |
+| `--frame-start` | | Start frame (auto if omitted) | First detected frame |
+| `--frame-end` | | End frame (auto if omitted) | Last detected frame |
 | `--codec` | `-c` | Video codec | `h264` |
 | `--format` | | Container format | `mp4` |
-| `--crf` | | Quality (0-51) | `23` |
+| `--crf` | | Quality (0-51, lower=better) | `23` |
 | `--preset` | | Encoding preset | `medium` |
+| `--tui` | | Launch TUI mode | |
 | `--verbose` | `-v` | Verbose output | |
 | `--version` | | Show version | |
 
@@ -182,10 +188,14 @@ Launch the interactive terminal UI:
 
 ```bash
 # If installed with pip install -e .
-img2vid-tui
+img2vid --tui
 
-# If using pip install -r requirements.txt only
-python -m src.main_tui
+# Or: running with no arguments also launches TUI
+img2vid
+
+# If not installed (run from project root)
+python -m src.main --tui
+python -m src.main
 ```
 
 ### TUI Keyboard Shortcuts
@@ -204,14 +214,14 @@ python -m src.main_tui
 |------|-------------|
 | **Auto** | Uses full detected sequence (default) |
 | **Frames** | Specify exact frame range (e.g., 1 to 240) |
-| **Time** | Specify time range (e.g., 0:00 to 1:30) |
+| **Time** | Specify time range in MM:SS or HH:MM:SS format |
 
 ## Library Usage
 
-Use img2vid as a Python library:
+Use img2vid as a Python library (run from the project root with venv active):
 
 ```python
-from src.models import ConversionConfig, Resolution, OutputSettings, FrameRange, VideoCodec
+from src.models import ConversionConfig, Resolution, OutputSettings, FrameRange, VideoCodec, ContainerFormat
 from src.converter import FFmpegConverter
 import asyncio
 
@@ -224,14 +234,15 @@ async def convert():
         frame_range=FrameRange(start=1, end=240),
         output_settings=OutputSettings(
             codec=VideoCodec.H264,
+            format=ContainerFormat.MP4,
             crf=18,
             preset="slow",
         ),
     )
-    
+
     converter = FFmpegConverter(config)
     result = await converter.convert()
-    
+
     if result.success:
         print(f"Done: {result.output_path}")
 
@@ -244,11 +255,11 @@ asyncio.run(convert())
 Image-Sequence-to-Video-CLI/
 ├── src/
 │   ├── __init__.py       # Package
-│   ├── main.py           # CLI entry point
-│   ├── main_tui.py       # TUI application
-│   ├── models.py         # Data classes
-│   ├── converter.py      # FFmpeg logic
-│   └── utils.py          # Utilities
+│   ├── main.py           # CLI + TUI entry point
+│   ├── main_tui.py       # TUI application (Textual)
+│   ├── models.py         # Data classes and enums
+│   ├── converter.py      # FFmpeg subprocess logic
+│   └── utils.py          # Sequence detection, helpers
 ├── tests/
 │   ├── test_models.py
 │   └── test_utils.py
@@ -289,11 +300,11 @@ mypy src/
 ## Build Executable
 
 ```bash
-# Windows (runs build.bat which handles venv + PyInstaller automatically)
+# Windows (automated: creates venv, installs deps, builds)
 build.bat
 
-# Manual (from project root, with venv active)
-pyinstaller --name img2vid --onefile src/main.py
+# Manual (run from project root with venv active)
+pyinstaller --name img2vid --onefile --paths . src/main.py
 ```
 
 ## CRF Quality Guide
@@ -303,8 +314,8 @@ pyinstaller --name img2vid --onefile src/main.py
 | 0-15 | Lossless | Archival, masters |
 | 16-20 | High | Portfolio, presentations |
 | 21-25 | Balanced | General use (default: 23) |
-| 26-30 | Small | Web distribution |
-| 31-51 | Lowest | Previews |
+| 26-30 | Smaller file | Web distribution |
+| 31-51 | Lowest | Quick previews |
 
 ## Codec Guide
 
@@ -312,31 +323,35 @@ pyinstaller --name img2vid --onefile src/main.py
 |-------|---------|------|-------|---------------|
 | H.264 | Good | Medium | Fast | Universal |
 | H.265 | Better | Small | Medium | Modern devices |
-| ProRes | Best | Large | Fast | Professional |
+| ProRes | Best | Large | Fast | Professional/macOS |
 | VP9 | Good | Small | Slow | Web (YouTube) |
 
 ## Troubleshooting
 
 **FFmpeg not found:**
 ```bash
-ffmpeg -version  # Verify installation
+ffmpeg -version  # Verify it is installed and in PATH
 ```
 
 **`img2vid` command not found after install:**
 ```bash
-# Make sure you used pip install -e . (not just pip install -r requirements.txt)
+# Ensure you ran pip install -e . (not just pip install -r requirements.txt)
 pip install -e .
-# If using requirements.txt only, run via:
+
+# Or run without installing (from project root):
 python -m src.main
 ```
 
 **No sequence detected:**
-Ensure images follow a numbered pattern: `frame_0001.png`, `img_001.exr`, etc.
+Ensure images follow a numbered pattern: `frame_0001.png`, `img_001.exr`, etc. The tool scans for files with consistent numeric padding.
 
 **Encoding slow:**
-- Use faster preset: `--preset fast` or `--preset ultrafast`
+- Use a faster preset: `--preset fast` or `--preset ultrafast`
 - Lower resolution or FPS
 - Use H.264 instead of H.265
+
+**ModuleNotFoundError when running `python -m src.main`:**
+Make sure you are running the command from the project root (`Image-Sequence-to-Video-CLI/`), not from inside the `src/` folder.
 
 ## License
 
