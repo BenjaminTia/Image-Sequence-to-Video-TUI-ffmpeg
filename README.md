@@ -62,8 +62,8 @@ sudo dnf install ffmpeg  # Fedora
 ### Install img2vid
 
 ```bash
-git clone https://github.com/BenjaminTia/Image-Sequence-to-Video-TUI-ffmpeg.git
-cd Image-Sequence-to-Video-TUI-ffmpeg
+git clone https://github.com/yourusername/img2vid.git
+cd img2vid
 
 python -m venv venv
 venv\Scripts\activate  # Windows
@@ -212,15 +212,6 @@ img2vid/
 └── README.md
 ```
 
-## Technical Highlights
-
-- **Async architecture** - FFmpeg subprocess wrapped in `asyncio` for non-blocking encoding with real-time stdout parsing
-- **Textual TUI framework** - Reactive widgets, keyboard bindings, and theming via the [Textual](https://github.com/Textualize/textual) library
-- **Typed data models** - Dataclasses and enums (`VideoCodec`, `Resolution`, `FrameRange`) for safe config passing
-- **Regex-based sequence detection** - Automatically identifies frame padding and numbering patterns (e.g., `frame_0001.png`, `img.0042.exr`)
-- **Process management** - Proper FFmpeg subprocess lifecycle with stderr capture and exit code handling
-- **Packagable** - PyInstaller-compatible for single-file distribution
-
 ## Development
 
 ```bash
@@ -290,10 +281,11 @@ MIT License
 
 ## Author
 
-**Benjamin Tia**
+**Your Name**
 
-- GitHub: [@BenjaminTia](https://github.com/BenjaminTia)
+- GitHub: [@yourusername](https://github.com/yourusername)
+- Portfolio: [your-portfolio.com](https://your-portfolio.com)
 
 ---
 
-*Built with Python, Textual, and FFmpeg*
+*Built with Python and Textual*
