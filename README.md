@@ -281,10 +281,7 @@ MIT License
 
 ## Author
 
-**Your Name**
-
-- GitHub: [@yourusername](https://github.com/yourusername)
-- Portfolio: [your-portfolio.com](https://your-portfolio.com)
+- GitHub: [@BenjaminTia](https://github.com/BenjaminTia)
 
 ---
 
